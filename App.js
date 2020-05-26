@@ -5,7 +5,6 @@ import {
 	View,
 	TouchableOpacity,
 	ActivityIndicator,
-	Fragment,
 	ScrollView,
 } from "react-native";
 import { Camera } from "expo-camera";
@@ -79,7 +78,7 @@ export default function App() {
 				</View>
 			) : googleVisionDetetion ? (
 				<View style={styles.resultGrid}>
-					<Text style={styles.heading}>Result !</Text>
+					<Text style={styles.heading}>Results</Text>
 					<View>
 						<ScrollView>
 							{googleVisionDetetion.localizedObjectAnnotations.map(
@@ -148,20 +147,18 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	button: {
-		backgroundColor: "#C2AC2D",
-		paddingLeft: 10,
-		paddingRight: 10,
-		borderRadius: 10,
-		width: 200,
 		alignItems: "center",
 		marginBottom: 20,
 		textAlignVertical: "center",
 	},
 	buttonTxt: {
+		backgroundColor: "#C2AC2D",
 		fontSize: 18,
 		marginBottom: 10,
 		color: "white",
 		textAlign: "center",
+		width: 200,
+		padding: 7,
 	},
 	spinnerStyle: {
 		flex: 1,
@@ -188,17 +185,11 @@ const styles = StyleSheet.create({
 	},
 	resultTable: {
 		borderWidth: 2,
-		borderColor: "black",
+		borderColor: "#C2AC2D",
 		margin: 10,
 		padding: 10,
-		borderRadius: 10,
 	},
 	backBtn: {
-		backgroundColor: "#C2AC2D",
-		paddingLeft: 10,
-		paddingRight: 10,
-		borderRadius: 10,
-		width: 200,
 		alignItems: "center",
 		marginBottom: 20,
 		textAlignVertical: "center",
