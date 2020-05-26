@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import {
+	StyleSheet,
+	Text,
+	View,
+	TouchableOpacity,
+	ActivityIndicator,
+	Fragment,
+	ScrollView,
+} from "react-native";
 import { Camera } from "expo-camera";
+import { config } from "./config/visionapi";
+import * as FileSystem from "expo-file-system";
 
 export default function App() {
 	const [hasPermission, setHasPermission] = useState(null);
 	const [type, setType] = useState(Camera.Constants.Type.back);
 	const [camera, setCamera] = useState(null);
+	const [googleVisionDetetion, setGoogleVisionDetetion] = useState(null);
+	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
 		(async () => {
@@ -22,58 +34,174 @@ export default function App() {
 	}
 	const snap = async () => {
 		let photo = await camera.takePictureAsync();
-		console.log(photo);
+		setIsLoading(true);
+		const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+			encoding: "base64",
+		});
+		callGoogleVIsionApi(base64);
+	};
+	const goBack = () => {
+		setGoogleVisionDetetion(null);
+	};
+	const callGoogleVIsionApi = async (base64) => {
+		let googleVisionRes = await fetch(`${config.apiUrl}?key=${config.apiKey}`, {
+			method: "POST",
+			body: JSON.stringify({
+				requests: [
+					{
+						image: {
+							content: base64,
+						},
+						features: [{ type: "OBJECT_LOCALIZATION", maxResults: 5 }],
+					},
+				],
+			}),
+		});
+
+		await googleVisionRes
+			.json()
+			.then((googleVisionRes) => {
+				setIsLoading(false);
+				if (googleVisionRes) {
+					setGoogleVisionDetetion(googleVisionRes.responses[0]);
+				}
+			})
+			.catch((error) => {
+				console.log(error);
+			});
 	};
 	return (
 		<View style={styles.container}>
-			<Camera
-				style={styles.main}
-				ref={(ref) => {
-					setCamera(ref);
-				}}
-				type={type}
-			>
-				<View style={styles.row}>
-					<TouchableOpacity
-						style={styles.button}
-						onPress={() => {
-							setType(
-								type === Camera.Constants.Type.back
-									? Camera.Constants.Type.front
-									: Camera.Constants.Type.back
-							);
-						}}
-					>
-						<Text style={styles.buttonTxt}>Flip</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.button} onPress={snap}>
-						<Text style={styles.buttonTxt}>Take Photo</Text>
+			{isLoading ? (
+				<View style={styles.spinnerStyle}>
+					<ActivityIndicator size={"large"} />
+					<Text style={styles.spinerTxt}>Wait i am fetching data....</Text>
+				</View>
+			) : googleVisionDetetion ? (
+				<View style={styles.resultGrid}>
+					<Text style={styles.heading}>Result !</Text>
+					<View>
+						<ScrollView>
+							{googleVisionDetetion.localizedObjectAnnotations.map(
+								(data, index) => {
+									return (
+										<View key={index} style={styles.resultTable}>
+											<Text>Object Name : {data.name}</Text>
+											<Text>score : {data.score}</Text>
+										</View>
+									);
+								}
+							)}
+						</ScrollView>
+					</View>
+					<TouchableOpacity style={styles.backBtn} onPress={goBack}>
+						<Text style={styles.buttonTxt}>Back</Text>
 					</TouchableOpacity>
 				</View>
-			</Camera>
+			) : (
+				<Camera
+					style={styles.main}
+					ref={(ref) => {
+						setCamera(ref);
+					}}
+					type={type}
+				>
+					<View style={styles.row}>
+						<TouchableOpacity
+							style={styles.button}
+							onPress={() => {
+								setType(
+									type === Camera.Constants.Type.back
+										? Camera.Constants.Type.front
+										: Camera.Constants.Type.back
+								);
+							}}
+						>
+							<Text style={styles.buttonTxt}>Flip</Text>
+						</TouchableOpacity>
+						<TouchableOpacity style={styles.button} onPress={snap}>
+							<Text style={styles.buttonTxt}>Take Photo</Text>
+						</TouchableOpacity>
+					</View>
+				</Camera>
+			)}
 		</View>
 	);
 }
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+		position: "relative",
 	},
 	main: {
 		flex: 1,
 	},
 	row: {
-		display: "flex",
-		backgroundColor: "red",
-		flexDirection: "row",
-		justifyContent: "space-between",
-		padding: 20,
+		flex: 1,
+		backgroundColor: "transparent",
+		flexDirection: "column",
+		justifyContent: "center",
+		position: "absolute",
+		bottom: 0,
+		width: "100%",
+		height: "auto",
+		alignItems: "center",
 	},
 	button: {
+		backgroundColor: "#C2AC2D",
+		paddingLeft: 10,
+		paddingRight: 10,
+		borderRadius: 10,
+		width: 200,
 		alignItems: "center",
+		marginBottom: 20,
+		textAlignVertical: "center",
 	},
 	buttonTxt: {
 		fontSize: 18,
 		marginBottom: 10,
 		color: "white",
+		textAlign: "center",
+	},
+	spinnerStyle: {
+		flex: 1,
+		justifyContent: "center",
+	},
+	spinerTxt: {
+		paddingTop: 10,
+		color: "black",
+		fontSize: 18,
+		fontWeight: "bold",
+		textAlign: "center",
+	},
+	resultGrid: {
+		flex: 1,
+		flexDirection: "column",
+		paddingTop: 20,
+	},
+	heading: {
+		fontSize: 16,
+		fontWeight: "bold",
+		marginLeft: 10,
+		marginTop: 20,
+		alignSelf: "center",
+	},
+	resultTable: {
+		borderWidth: 2,
+		borderColor: "black",
+		margin: 10,
+		padding: 10,
+		borderRadius: 10,
+	},
+	backBtn: {
+		backgroundColor: "#C2AC2D",
+		paddingLeft: 10,
+		paddingRight: 10,
+		borderRadius: 10,
+		width: 200,
+		alignItems: "center",
+		marginBottom: 20,
+		textAlignVertical: "center",
+		alignSelf: "center",
 	},
 });
