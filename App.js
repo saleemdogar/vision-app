@@ -6,9 +6,6 @@ import Speech from "./components/speech";
 const App = () => {
 	const [moduleType, setModuleType] = useState("");
 
-	const onModuleChange = (type) => {
-		setModuleType(type);
-	};
 	let module = null;
 	if (moduleType === "vision") module = <Vision />;
 	else if (moduleType === "speech") module = <Speech />;
@@ -29,7 +26,7 @@ const App = () => {
 						setModuleType("speech");
 					}}
 				>
-					<Text style={styles.buttonTxt}>Speach</Text>
+					<Text style={styles.buttonTxt}>Speech</Text>
 				</TouchableOpacity>
 			</View>
 		);
